@@ -1,0 +1,189 @@
+---
+title: "Final_Project_Christoff"
+author: "Lucy Christoff"
+date: "2024-04-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Preparing Annual Income Data
+data <- read.csv("Annual_Income.csv")  
+# Preparing Quarterly Income Data
+data <- read.csv("Quarterly_Income.csv")  
+```
+
+```{r}
+# Reviewing my data for Annual_Income
+data <- read.csv("Annual_Income.csv")
+head(data)
+str(data)
+View(data)
+```
+
+```{r}
+# Reviewing my data for Quarterly_Income
+data <- read.csv("Quarterly_Income.csv")
+head(data)
+str(data)
+View(data)
+```
+
+```{r}
+# Installing Shiny
+if (!require("shiny")) install.packages("shiny")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("dplyr")) install.packages("dplyr")
+
+library(shiny)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+# Creating an interface to use and display my data
+ui <- fluidPage(
+    titlePanel("Income Data Analysis"),
+    sidebarLayout(
+        sidebarPanel(
+            fileInput("annualFile", "Choose CSV File for Annual Income",
+                      accept = c("text/csv", "text/comma-separated-values,text/plain", ".csv")),
+            fileInput("quarterlyFile", "Choose CSV File for Quarterly Income",
+                      accept = c("text/csv", "text/comma-separated-values,text/plain", ".csv")),
+            selectInput("viewData", "Select Data to View", choices = c("Annual", "Quarterly")),
+            actionButton("btn", "Load Data")
+        ),
+        mainPanel(
+           tableOutput("dataView"),
+           plotOutput("dataPlot")
+        )
+    )
+)
+```
+
+```{r}
+# Setting up my server part of my Shiny App
+server <- function(input, output) {
+    data_annual <- reactiveVal()
+    data_quarterly <- reactiveVal()
+
+    observeEvent(input$btn, {
+        if (is.null(input$annualFile)) return(NULL)
+        data_annual(read.csv(input$annualFile$datapath, skip = 2)) 
+
+        if (is.null(input$quarterlyFile)) return(NULL)
+        data_quarterly(read.csv(input$quarterlyFile$datapath, skip = 2))  
+    })
+
+# Displaying the data
+    output$dataView <- renderTable({
+        req(input$viewData)
+        if (input$viewData == "Annual") {
+            data_annual()
+        } else {
+            data_quarterly()
+        }
+    })
+
+# Plotting the data
+    output$dataPlot <- renderPlot({
+        req(input$viewData)
+        data <- if (input$viewData == "Annual") {
+            data_annual()
+        } else {
+            data_quarterly()
+        }
+        ggplot(data, aes(x = Year, y = Income)) + 
+            geom_line() +
+            labs(title = paste("Income Over Time: ", input$viewData),
+                 x = "Year", y = "Income")
+    })
+}
+```
+
+```{r}
+# Creating Histograms, Boxplots, and a Correlation Plot
+ui <- fluidPage(
+    titlePanel("Preliminary Data Analysis App"),
+    sidebarLayout(
+        sidebarPanel(
+            fileInput("fileInput", "Choose CSV File",
+                      accept = c(".csv")),
+            selectInput("varSelect", "Select Variable for Histogram:",
+                        choices = NULL), 
+            selectInput("boxSelect", "Select Variable for Boxplot:",
+                        choices = NULL), 
+            selectInput("corrSelect1", "Select First Variable for Correlation:",
+                        choices = NULL),
+            selectInput("corrSelect2", "Select Second Variable for Correlation:",
+                        choices = NULL)
+        ),
+        mainPanel(
+            plotOutput("histPlot"),
+            plotOutput("boxPlot"),
+            plotOutput("corrPlot")
+        )
+    )
+)
+```
+
+```{r}
+# Defining the server
+server <- function(input, output, session) {
+    # Reactive expression to read the data once uploaded
+    dataset <- reactive({
+        req(input$fileInput)
+        read.csv(input$fileInput$datapath)
+    })
+    
+# Updating selectInput choices based on columns in the uploaded file
+    observe({
+        df <- dataset()
+        updateSelectInput(session, "varSelect", choices = names(df))
+        updateSelectInput(session, "boxSelect", choices = names(df))
+        updateSelectInput(session, "corrSelect1", choices = names(df))
+        updateSelectInput(session, "corrSelect2", choices = names(df))
+    })
+    
+# Histogram based on selected variable
+    output$histPlot <- renderPlot({
+        req(input$varSelect)
+        df <- dataset()
+        ggplot(df, aes_string(x = input$varSelect)) + 
+            geom_histogram(bins = 30, fill = "blue", color = "green") +
+            labs(title = paste("Histogram of", input$varSelect))
+    })
+    
+# Bboxplot based on selected variable
+    output$boxPlot <- renderPlot({
+        req(input$boxSelect)
+        df <- dataset()
+        ggplot(df, aes_string(y = input$boxSelect)) + 
+            geom_boxplot(fill = "yellow", color = "pink") +
+            labs(title = paste("Boxplot of", input$boxSelect))
+    })
+    
+# Correlation plot based on selected variables
+    output$corrPlot <- renderPlot({
+        req(input$corrSelect1, input$corrSelect2)
+        df <- dataset()
+        ggplot(df, aes_string(x = input$corrSelect1, y = input$corrSelect2)) +
+            geom_point(alpha = 0.6) +
+            geom_smooth(method = "lm", color = "red", se = FALSE) +
+            labs(title = paste("Scatter Plot of", input$corrSelect1, "vs", input$corrSelect2))
+    })
+}
+```
+
+```{r}
+# Running my Shiny App
+shinyApp(ui = ui, server = server)
+```
+
+```{r}
+
+```
+
