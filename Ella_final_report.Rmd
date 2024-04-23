@@ -1,0 +1,51 @@
+---
+title: "Final Report"
+author: "Ella Hoch Robinson"
+date: "2024-04-23"
+output: pdf_document
+---
+
+### Introduction
+
+An introductory paragraph detailing in plain English your question of interest and why this is interesting.
+
+The 2008 financial crisis had lasting and far-reaching effects. One of the primary institutions that reflected the severity of this crisis was the banking industry. Given that banks support nearly every other industry in the US, it is vital to understand the impact of the financial crisis on banks to understand how other industries were impacted. Our group decided to investigate key financial statistics from the Federal Deposit Insurance Corporation (FDIC) to learn more about the impacts of the 2008 financial crisis.
+
+### Exploratory data analysis
+
+A few paragraphs with accompanying graphics and summary statistics detailing an exploratory data analysis to informally answer your scientific question of interest.
+
+After loading and cleaning an all encompassing FDIC annual report, we created a shiny app that displayed correlations and distributions of selected variables. These graphs allowed us to observe the variables that were highly variable in the years of the financial crisis, 2008 and 2009. There were several variables that appeared to be impacted by the financial crisis.
+
+The first variable we noticed a difference in 2008 and 2009 was that the number of unprofitable institutions increased dramatically in 2008 and 2009.
+
+```{r, include=F}
+library(tidyverse)
+df <- read_csv("annual-income_update.csv")
+```
+
+```{r}
+summary(df$`Number of unprofitable institutions`)
+```
+
+Generally, this variable is skewed right. The earliest data in our dataset started in 1980, when this value was generally higher than the trend in the 2000s. There are not any outliers in this variable. When we plotted the number of unprofitable banks by year, we could see a deviation from the trend of the time period in 2008 and 2009. This makes sense with the financial crisis, because part of what caused this crisis was banks struggling to afford their costs. This would make a bank unprofitable.
+
+![](scatter_unprofit.png)
+
+Another variable we investigated is applicable income tax. The variable is generally uniform with no outliers. 
+
+![](tax_box.png)
+
+This variable may reflect some of the bank's profits, because that is generally what is taxed by the US Government. Again, with applicable income tax, we observe a similar pattern of the value reaching about 1980s levels in 2008 and 2009. 
+
+![](tax_year.png)
+This lack of tax revenue from banks likely means that the US government had to raise funds or borrow more money in order to pay bills in 2008 and 2009. This could have impacted the federal debt and global financial markets.
+
+
+### Statistical Question
+
+
+
+A paragraph transforming your scientific question into a formal statistical hypothesis, using notation where appropriate. 
+
+A few paragraphs implementing your statistical analysis. You should include graphics to check modeling assumptions. A concluding paragraph.
