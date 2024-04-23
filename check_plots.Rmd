@@ -10,6 +10,7 @@ df <- readr::read_csv("annual-income_update.csv")
 
 ```{r}
 vari <- "Trading accounts"
+vari2 <- "Total interest expense"
 ```
 
 
@@ -28,5 +29,28 @@ ggplot(df, aes(.data[[vari]])) +
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank())
             
+```
+
+```{r}
+inter_form1 <- paste0("`", vari, "`")
+inter_form2 <- paste0("`", vari2, "`")
+form <- as.formula(paste(inter_form2, "~", inter_form1, sep=""))
+
+lm_model <- lm(form, data = df)
+summ(lm_model)
+```
+
+```{r}
+print(names(df)[-1])
+```
+
+```{r}
+newdf <- read_csv("quarterly-income_update.csv")
+```
+
+```{r}
+newdf |> 
+  mutate(across(c(where(is.character), -c(Year)), as.numeric)) |> 
+  mutate(Year = as.factor(Year))
 ```
 

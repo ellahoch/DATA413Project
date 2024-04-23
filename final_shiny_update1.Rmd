@@ -25,7 +25,8 @@ ui <- fluidPage(
     titlePanel("Preliminary Data Analysis App"),
     sidebarLayout(
         sidebarPanel(
-            
+            selectInput("dataSelect", "Select a dataset to explore:",
+                        choices = NULL),
             selectInput("varSelect", "Select Variable for Histogram:", 
                         choices = NULL), 
             sliderInput("nBins", "Size of Histogram Bins", 1, 100, 30),
@@ -49,16 +50,22 @@ ui <- fluidPage(
 ```{r}
 # Defining the server
 server <- function(input, output, session) {
+  observe({
+    updateSelectInput(session, "dataSelect", 
+                      choices = c("Annual reports", "Quarterly reports"))
+  })
   
-   
-    dataset <- reactive({
-        readr::read_csv("annual-income_update.csv")
+  dataset <- reactive({
+    if(input$dataSelect == "Annual reports"){
+      readr::read_csv("annual-income_update.csv")
+    } else{
+      readr::read_csv("quarterly-income_update2.csv")
+    }
     })
     
     
     observe({
         df <- dataset()
-        trans_options <- c("no transformation","log", "square")
         updateSelectInput(session, "varSelect", choices = names(df)[-1])
   updateSliderInput(
     session, 
