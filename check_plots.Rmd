@@ -1,0 +1,32 @@
+---
+title: "plot tests"
+author: "Ella Hoch Robinson"
+date: "2024-04-23"
+output: html_document
+---
+```{r}
+df <- readr::read_csv("annual-income_update.csv")
+```
+
+```{r}
+vari <- "Trading accounts"
+```
+
+
+
+```{r}
+ggplot(df, aes(.data[[vari]])) + 
+      geom_histogram(fill = "blue", color = "black") +
+      labs(title = paste("Histogram of", vari))
+```
+
+```{r}
+ggplot(df, aes(.data[[vari]])) + 
+            geom_boxplot(fill = "yellow", color = "black") +
+            labs(title = paste("Boxplot of", vari)) +
+  theme(axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank())
+            
+```
+
