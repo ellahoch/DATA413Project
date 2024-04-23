@@ -28,15 +28,13 @@ ui <- fluidPage(
             
             selectInput("varSelect", "Select Variable for Histogram:", 
                         choices = NULL), 
+            sliderInput("nBins", "Size of Histogram Bins", 1, 100, 30),
             selectInput("boxSelect", "Select Variable for Boxplot:", 
                         choices = NULL), 
-            selectInput("corrSelect1", "Select X Variable for Correlation:",                                      choices = NULL),
-            selectInput("corrSelect2", "Select Y Variable for Correlation:", 
-                        choices = NULL),
-            selectInput("regressionSelect1", "Select X Variable for Regression:", 
-                        choices = NULL),
-            selectInput("regressionSelect2", "Select Y Variable for Regression:", 
+            selectInput("corrSelect1", "Select X Variable for Regression:",                                      choices = NULL),
+            selectInput("corrSelect2", "Select Y Variable for Regression:", 
                         choices = NULL)
+            
         ),
         mainPanel(
             plotOutput("histPlot"),
@@ -60,20 +58,26 @@ server <- function(input, output, session) {
     
     observe({
         df <- dataset()
+        trans_options <- c("no transformation","log", "square")
         updateSelectInput(session, "varSelect", choices = names(df)[-1])
+  updateSliderInput(
+    session, 
+    "nBins", 
+    value = 20, 
+    min = 1, 
+    max = 100
+     )
         updateSelectInput(session, "boxSelect", choices = names(df))
         updateSelectInput(session, "corrSelect1", choices = names(df))
-        updateSelectInput(session, "corrSelect2", choices = names(df))
-        updateSelectInput(session, "regressionSelect1", choices = names(df))
-        updateSelectInput(session, "regressionSelect2", choices = names(df))
+        updateSelectInput(session, "corrSelect2", choices = names(df)[-1])
     })
     
     
     output$histPlot <- renderPlot({
-        req(input$varSelect)
+        req(input$varSelect, input$nBins)
         df <- dataset()
         ggplot(df, aes(.data[[input$varSelect]])) + 
-            geom_histogram(fill = "blue", color = "black") +
+            geom_histogram(bins = input$nBins, fill = "blue", color = "black") +
             labs(title = paste("Histogram of", input$varSelect))
     }) ## this one is working, weird results for year but how to omit?
     
@@ -101,15 +105,15 @@ server <- function(input, output, session) {
     
     
     output$regressionSummary <- renderPrint({
-        req(input$regressionSelect1, input$regressionSelect2)
+        req(input$corrSelect1, input$corrSelect2)
         df <- dataset()
-        # print(class(input$regressionSelect1))
-        # print(input$regressionSelect1)
-        inter_form1 <- paste0("`", input$regressionSelect1, "`")
-        inter_form2 <- paste0("`", input$regressionSelect2, "`")
+        # print(input$corrSelect1)
+        # print(input$corrSelect2)
+        inter_form1 <- paste0("`", input$corrSelect1, "`")
+        inter_form2 <- paste0("`", input$corrSelect2, "`")
         form <- as.formula(paste(inter_form2, "~", inter_form1, sep=""))
         lm_model <- lm(form, data = df)
-        summ(lm_model)
+        summ(lm_model, digits = 3)
     })
 }
 ```
