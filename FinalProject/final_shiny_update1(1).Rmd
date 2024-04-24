@@ -1,0 +1,162 @@
+---
+title: "updated shiny app"
+author: "Ella Hoch Robinson"
+date: "2024-04-23"
+output: html_document
+---
+
+```{r}
+if (!require("shiny")) install.packages("shiny")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("jtools")) install.packages("jtools")
+
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(jtools)
+```
+
+
+```{r}
+# Creating Histograms, Boxplots, and a Correlation Plot
+# UI for the Shiny App
+ui <- fluidPage(
+    titlePanel("Preliminary Data Analysis App"),
+    sidebarLayout(
+        sidebarPanel(
+            selectInput("dataSelect", "Select a dataset to explore:",
+                        choices = NULL),
+            selectInput("varSelect", "Select Variable for Histogram:", 
+                        choices = NULL), 
+            sliderInput("nBins", "Size of Histogram Bins", 1, 100, 30),
+            selectInput("boxSelect", "Select Variable for Boxplot:", 
+                        choices = NULL), 
+            selectInput("corrSelect1", "Select X Variable for Regression:",                                      choices = NULL),
+            selectInput("corrSelect2", "Select Y Variable for Regression:", 
+                        choices = NULL),
+            selectInput("tTestSelect", "Select Variable for Dependent t-Test:", 
+                        choices = NULL)
+            
+        ),
+        mainPanel(
+            plotOutput("histPlot"),
+            plotOutput("boxPlot"),
+            plotOutput("corrPlot"),
+            verbatimTextOutput("regressionSummary"),
+            verbatimTextOutput("tTestResult")
+        )
+    )
+)
+```
+
+```{r}
+# Defining the server
+server <- function(input, output, session) {
+  
+  dataset <- reactiveVal(readr::read_csv("preannual-income_update.csv"))
+  
+  observe({
+    updateSelectInput(session, "dataSelect", 
+                      choices = c("Pre-2008 Annual Reports", "Post-2008 Annual Reports", "All Years Annual Reports"))
+    
+  })
+  
+  
+
+  
+  dataset2 <- readr::read_csv("annual-income_update.csv")
+
+    
+    
+    observe({
+          if(input$dataSelect == "Pre-2008 Annual Reports"){
+             dataset(readr::read_csv("preannual-income_update.csv"))
+          } else if (input$dataSelect == "Post-2008 Annual Reports"){
+            dataset(readr::read_csv("postannual-income_update.csv"))
+          }
+            else{
+            dataset(readr::read_csv("annual-income_update.csv"))
+          }
+      
+        df <- dataset()
+        df2 <- dataset2
+        updateSelectInput(session, "varSelect", choices = names(df)[-1])
+  updateSliderInput(
+    session, 
+    "nBins", 
+    value = 20, 
+    min = 1, 
+    max = 100
+     )
+        updateSelectInput(session, "boxSelect", choices = names(df)[-1])
+        updateSelectInput(session, "corrSelect1", choices = names(df))
+        updateSelectInput(session, "corrSelect2", choices = names(df)[-1])
+        updateSelectInput(session, "tTestSelect", choices = names(df2)[-1])
+    })
+    
+    
+    output$histPlot <- renderPlot({
+        req(input$varSelect, input$nBins)
+        df <- dataset()
+        ggplot(df, aes(.data[[input$varSelect]])) + 
+            geom_histogram(bins = input$nBins, fill = "blue", color = "black") +
+            labs(title = paste("Histogram of", input$varSelect))
+    }) 
+    
+    
+    output$boxPlot <- renderPlot({
+        req(input$boxSelect)
+        df <- dataset()
+        ggplot(df, aes(.data[[input$boxSelect]])) + 
+            geom_boxplot(fill = "yellow", color = "black") +
+            labs(title = paste("Boxplot of", input$boxSelect)) +
+          theme(axis.title.y = element_blank(),
+            axis.text.y = element_blank(),
+           axis.ticks.y = element_blank())
+   })
+    
+    
+    output$corrPlot <- renderPlot({
+        req(input$corrSelect1, input$corrSelect2)
+        df <- dataset()
+        ggplot(df, aes(x = .data[[input$corrSelect1]], y = .data[[input$corrSelect2]])) +
+            geom_point(alpha = 0.6) +
+            geom_smooth(method = "lm", color = "red", se = FALSE) +
+            labs(title = paste("Scatter Plot of", input$corrSelect1, "vs", input$corrSelect2))
+    })
+    
+    
+    output$regressionSummary <- renderPrint({
+        req(input$corrSelect1, input$corrSelect2)
+        df <- dataset()
+        # print(input$corrSelect1)
+        # print(input$corrSelect2)
+        inter_form1 <- paste0("`", input$corrSelect1, "`")
+        inter_form2 <- paste0("`", input$corrSelect2, "`")
+        form <- as.formula(paste(inter_form2, "~", inter_form1, sep=""))
+        lm_model <- lm(form, data = df)
+        summ(lm_model, digits = 3)
+    })
+    
+  output$tTestResult <- renderPrint({
+    req(input$tTestSelect)
+    df2 <- dataset2
+    
+   
+    pre_2008 <- df2[df2$Year <= 2008, input$tTestSelect]
+    post_2008 <- df2[df2$Year > 2008, input$tTestSelect]
+    
+    
+    t_test_result <- t.test(pre_2008, post_2008, paired = TRUE)
+    
+   
+    t_test_result
+  })
+}
+```
+
+```{r}
+# Running my Shiny App
+shinyApp(ui = ui, server = server)
+```
